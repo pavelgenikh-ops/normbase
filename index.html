@@ -48,6 +48,39 @@
   }
   .hbadge b{display:block;font-size:15.5px;font-weight:600;color:#fff}
 
+  /* кнопка и окно «На телефон» */
+  .phonebtn{
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#dbe6f0;
+    border-radius:11px;padding:9px 15px;font-size:14px;cursor:pointer;transition:.18s;
+    display:inline-flex;align-items:center;gap:8px;white-space:nowrap
+  }
+  .phonebtn:hover{background:#fff;color:#0c0e11;border-color:#fff}
+  .modal{
+    position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+    background:rgba(6,9,13,.82);backdrop-filter:blur(4px);padding:20px
+  }
+  .modal.on{display:flex}
+  .mbox{
+    background:#fff;color:var(--ink);border-radius:20px;padding:26px 28px;max-width:420px;width:100%;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);text-align:center;position:relative
+  }
+  .mbox h3{margin:0 0 6px;font-size:21px}
+  .mbox p{margin:0 0 18px;font-size:14.5px;color:var(--muted)}
+  .mbox img{width:220px;height:220px;display:block;margin:0 auto 16px;border-radius:12px;
+            border:1px solid var(--line);background:#fff}
+  .mlink{
+    display:block;font-size:14px;color:var(--blue);word-break:break-all;background:#f1f5f9;
+    border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-decoration:none
+  }
+  .mlink:hover{background:#e6eef7}
+  .mnote{margin-top:14px;font-size:13.5px;color:#475569;background:#f0f7ff;
+         border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:10px 12px;text-align:left}
+  .mclose{
+    position:absolute;right:14px;top:12px;border:0;background:transparent;font-size:24px;
+    line-height:1;color:#94a3b8;cursor:pointer
+  }
+  .mclose:hover{color:var(--ink)}
+
   nav.tabs{max-width:1240px;margin:18px auto 0;display:flex;gap:7px;flex-wrap:wrap}
   .tab{
     background:rgba(255,255,255,.06);color:#c9d6e2;border:1px solid rgba(255,255,255,.12);
@@ -322,7 +355,7 @@
   }
   @media print{
     body{background:#fff;color:#000} body:before,body:after{display:none}
-    nav.tabs,.searchbar,.back,.crumbs{display:none}
+    nav.tabs,.searchbar,.back,.crumbs,.phonebtn,.modal{display:none}
     .doc .dbody{display:block !important}
     .doc,.ncard,.tli,.sheetHead{break-inside:avoid;box-shadow:none;border:1px solid #ddd}
   }
@@ -338,6 +371,7 @@
         <h1 id="hTitle">Нормативная база строительства</h1>
         <p class="hsub" id="hSub"></p>
       </div>
+      <button class="phonebtn" id="phoneBtn">📱 Открыть на телефоне</button>
       <div class="hbadge">
         <b id="hChecked"></b>
         последняя сверка редакций
@@ -360,6 +394,17 @@
   <div class="crumbs" id="crumbs"></div>
   <div id="view"></div>
 </main>
+
+<div class="modal" id="qrModal">
+  <div class="mbox">
+    <button class="mclose" id="qrClose" title="Закрыть">&times;</button>
+    <h3>Открыть на телефоне</h3>
+    <p>Наведите камеру телефона на код</p>
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOTYiIGhlaWdodD0iMjk2IiBjbGFzcz0ic2Vnbm8iPjxnIHRyYW5zZm9ybT0ic2NhbGUoOCkiPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0wIDBoMzd2MzdoLTM3eiIvPjxwYXRoIGNsYXNzPSJxcmxpbmUiIHN0cm9rZT0iIzBjMGUxMSIgZD0iTTIgMi41aDdtNyAwaDFtMiAwaDFtMSAwaDNtMSAwaDFtMiAwaDdtLTMzIDFoMW01IDBoMW0xIDBoMm0zIDBoMm0xIDBoMW0xIDBoMW0yIDBoMW0xIDBoMW0yIDBoMW01IDBoMW0tMzMgMWgxbTEgMGgzbTEgMGgxbTEgMGgxbTEgMGg4bTIgMGgxbTEgMGgxbTEgMGgxbTEgMGgxbTEgMGgzbTEgMGgxbS0zMyAxaDFtMSAwaDNtMSAwaDFtMiAwaDJtMSAwaDFtNiAwaDFtMiAwaDJtMiAwaDFtMSAwaDNtMSAwaDFtLTMzIDFoMW0xIDBoM20xIDBoMW0zIDBoMW0yIDBoNW0yIDBoMW0zIDBoMW0xIDBoMW0xIDBoM20xIDBoMW0tMzMgMWgxbTUgMGgxbTIgMGg1bTIgMGgxbTIgMGgxbTEgMGgxbTIgMGgxbTEgMGgxbTUgMGgxbS0zMyAxaDdtMSAwaDFtMSAwaDFtMSAwaDFtMSAwaDFtMSAwaDFtMSAwaDFtMSAwaDFtMSAwaDFtMSAwaDFtMSAwaDdtLTI0IDFoMm0xIDBoMW0yIDBoM20yIDBoMW0xIDBoMW0xIDBoMW0tMjQgMWgzbTEgMGgybTIgMGgybTEgMGg4bTEgMGgxbTEgMGgxbTYgMGgybS0zMiAxaDFtMyAwaDJtNSAwaDFtMSAwaDFtMSAwaDFtMyAwaDJtMiAwaDFtMiAwaDJtMSAwaDJtMSAwaDFtLTMzIDFoNG0xIDBoMm0xIDBoMm0xIDBoMm0yIDBoM200IDBoNG0xIDBoM20xIDBoMm0tMzMgMWgybTIgMGgxbTMgMGgxbTEgMGgybTIgMGgxbTMgMGgzbTMgMGg0bTEgMGgxbTIgMGgxbS0zMiAxaDRtMSAwaDFtMSAwaDJtMSAwaDNtNCAwaDJtMiAwaDFtMSAwaDJtMSAwaDNtMSAwaDFtLTMyIDFoMW0xIDBoMW00IDBoMW0xIDBoMm0xIDBoMm0xIDBoMm0xIDBoMW0xIDBoMW0zIDBoMW00IDBoM20tMjcgMWgybTIgMGgzbTIgMGgxbTEgMGg1bTUgMGgxbTIgMGgxbS0yOSAxaDJtMSAwaDFtMiAwaDFtNiAwaDFtMSAwaDJtMSAwaDVtMSAwaDNtMSAwaDJtLTMxIDFoMW0xIDBoMW0xIDBoM20zIDBoMW0xIDBoMm0yIDBoMW0xIDBoNW0yIDBoMm0xIDBoMW0xIDBoMW0tMzAgMWgzbTEgMGgxbTEgMGgzbTEgMGgxbTEgMGgzbTIgMGgxbTMgMGgzbTEgMGgxbTEgMGgybTEgMGgybS0zMyAxaDRtMSAwaDJtMiAwaDFtMSAwaDNtMSAwaDFtMSAwaDJtNSAwaDFtMSAwaDNtMSAwaDJtLTMxIDFoMW02IDBoMW0yIDBoMW0xIDBoMW0zIDBoMm0xIDBoMW0zIDBoM20xIDBoMW0tMjYgMWgxbTIgMGgxbTEgMGgybTMgMGgybTEgMGgzbTIgMGgxbTcgMGgybTEgMGgxbS0zMyAxaDJtMyAwaDFtMSAwaDFtMSAwaDVtMiAwaDFtMiAwaDFtMyAwaDFtMiAwaDFtMiAwaDJtMSAwaDFtLTMxIDFoMW0xIDBoMW0xIDBoMm0zIDBoMW0xIDBoMW0xIDBoNG0yIDBoNG0xIDBoMm0xIDBoMW0xIDBoMm0tMzIgMWgxbTIgMGgxbTIgMGgxbTIgMGgxbTIgMGgybTEgMGg1bTEgMGg0bTEgMGgzbTIgMGgxbS0zMyAxaDFtMSAwaDFtMyAwaDFtMSAwaDFtMSAwaDNtMiAwaDFtNiAwaDdtMyAwaDFtLTI1IDFoMW0xIDBoMW0xIDBoMm0xIDBoNW00IDBoMW0zIDBoMm0tMzAgMWg3bTMgMGgxbTcgMGgzbTEgMGgzbTEgMGgxbTEgMGgxbTIgMGgxbS0zMiAxaDFtNSAwaDFtMSAwaDJtNCAwaDFtMSAwaDFtMSAwaDJtMSAwaDRtMyAwaDVtLTMzIDFoMW0xIDBoM20xIDBoMW04IDBoMTRtMSAwaDFtMSAwaDFtLTMzIDFoMW0xIDBoM20xIDBoMW0xIDBoMm00IDBoMW0yIDBoMm0xIDBoMm0xIDBoMW0zIDBoMW0yIDBoM20tMzMgMWgxbTEgMGgzbTEgMGgxbTEgMGgybTYgMGgybTIgMGgybTIgMGgxbTEgMGgybTIgMGgxbS0zMSAxaDFtNSAwaDFtMSAwaDFtMSAwaDFtMiAwaDFtMSAwaDJtMiAwaDJtMSAwaDRtMSAwaDJtMyAwaDFtLTMzIDFoN20yIDBoMm00IDBoNW0xIDBoMW00IDBoMW0xIDBoMyIvPjwvZz48L3N2Zz4K" alt="QR-код ссылки на справочник">
+    <a class="mlink" href="https://pavelgenikh-ops.github.io/normbase/" target="_blank" rel="noopener">https://pavelgenikh-ops.github.io/normbase/</a>
+    <div class="mnote">Ссылка ведёт в интернет, поэтому работает с любого телефона и из любой сети — мобильный интернет, домашний или рабочий Wi-Fi. Адрес всегда один и тот же.</div>
+  </div>
+</div>
 
 <footer>
   <div><b>Метки.</b></div>
@@ -818,6 +863,13 @@
     var head = e.target.closest('.dhead');
     if(head){ head.parentElement.classList.toggle('open'); }
   });
+
+  // окно «На телефоне»
+  var modal = document.getElementById('qrModal');
+  document.getElementById('phoneBtn').addEventListener('click', function(){ modal.classList.add('on'); });
+  document.getElementById('qrClose').addEventListener('click', function(){ modal.classList.remove('on'); });
+  modal.addEventListener('click', function(e){ if(e.target === modal) modal.classList.remove('on'); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') modal.classList.remove('on'); });
 
   render();
 })();
