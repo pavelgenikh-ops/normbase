@@ -372,6 +372,7 @@
         <p class="hsub" id="hSub"></p>
       </div>
       <button class="phonebtn" id="phoneBtn">📱 Открыть на телефоне</button>
+      <a class="phonebtn" id="journalBtn" href="/journal" style="display:none;text-decoration:none">📊 Журнал</a>
       <div class="hbadge">
         <b id="hChecked"></b>
         последняя сверка редакций
@@ -416,6 +417,7 @@
     <span><span class="dot web"></span> редакция сверена с источником</span>
     <span><span class="dot base"></span> справочные данные</span>
   </div>
+  <p style="margin-top:14px" id="logNote" style="display:none"></p>
   <p style="margin-top:14px">Рабочий инструмент, а не официальный источник. Кнопка «Найти текст документа» открывает поиск по шифру в электронном фонде — там же видно, с какими изменениями документ действует сейчас. Другие источники:
     <a href="https://docs.cntd.ru" target="_blank" rel="noopener">docs.cntd.ru</a> ·
     <a href="https://protect.gost.ru" target="_blank" rel="noopener">protect.gost.ru</a> ·
@@ -454,6 +456,41 @@
   document.getElementById('hTitle').textContent = NB.meta.title;
   document.getElementById('hSub').textContent = NB.meta.subtitle;
   document.getElementById('hChecked').textContent = NB.meta.checked;
+
+  // журнал: включаем только если сервер подтвердил поддержку (облачная версия)
+  var canLog = false;
+  var mayAsk = location.protocol === 'http:' || location.protocol === 'https:';
+  function log(event, detail){
+    if(!canLog) return;
+    try{
+      fetch('/_log', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({event:event, detail:detail||''}),
+        keepalive:true
+      }).catch(function(){});
+    }catch(e){}
+  }
+
+  // спрашиваем сервер: облачная версия? кто пользователь?
+  if(mayAsk){
+    try{
+      fetch('/_me').then(function(r){ return r.ok ? r.json() : null; }).then(function(me){
+        if(!me) return;
+        canLog = true;
+        log('visit', document.title);
+        var ln = document.getElementById('logNote');
+        if(ln){
+          ln.textContent = 'В облачной версии ведётся журнал посещений: фиксируется, кто и когда открывал справочник и какие документы смотрел.';
+          ln.style.display = 'block';
+        }
+        if(me.canSeeJournal){
+          var b = document.getElementById('journalBtn');
+          if(b) b.style.display = 'inline-flex';
+        }
+      }).catch(function(){});
+    }catch(e){}
+  }
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -825,7 +862,7 @@
     clearTimeout(t);
     t = setTimeout(function(){
       state.query = qInput.value.trim();
-      if(state.query){ state.section=null; state.stage=null; }
+      if(state.query){ state.section=null; state.stage=null; log('search', state.query); }
       render();
     }, 160);
   });
@@ -842,6 +879,8 @@
     if(folder){
       folder.classList.add('zoom');
       var id = folder.dataset.sec;
+      var secObj = NB.sections.filter(function(x){return x.id===id;})[0];
+      log('section', secObj ? secObj.title : id);
       setTimeout(function(){ state.section = id; state.stage = null; render(); }, 230);
       return;
     }
@@ -849,6 +888,9 @@
     if(step){
       state.section = step.dataset.sec;
       state.stage = step.dataset.stage;
+      var st = stageOf(state.stage);
+      var sc = NB.sections.filter(function(x){return x.id===state.section;})[0];
+      log('stage', (sc ? sc.title : '') + ' → ' + (st ? st.t : state.stage));
       render();
       return;
     }
@@ -861,7 +903,14 @@
       state.section = secBack.dataset.secBack; state.stage = null; render(); return;
     }
     var head = e.target.closest('.dhead');
-    if(head){ head.parentElement.classList.toggle('open'); }
+    if(head){
+      var doc = head.parentElement;
+      doc.classList.toggle('open');
+      if(doc.classList.contains('open')){
+        var codeEl = head.querySelector('.dcode');
+        log('doc', codeEl ? codeEl.textContent : '');
+      }
+    }
   });
 
   // окно «На телефоне»
