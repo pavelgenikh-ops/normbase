@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Нормативная база строительства</title>
+<style>
+  :root{
+    --blue:#004e96; --blue-lt:#3b82f6; --pink:#ec008c;
+    --ink:#0e1116; --paper:#ffffff; --muted:#64748b; --line:#e2e8f0;
+    --ok:#16a34a; --warn:#b45309;
+    --dark:#0c0e11; --dark-2:#14171c;
+    --shadow:0 1px 3px rgba(12,16,22,.08), 0 10px 30px rgba(12,16,22,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    background:var(--dark); color:#e8edf3; line-height:1.6; font-size:16px;
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  /* фон сцены: точечная сетка + генплан объекта */
+  body:before{
+    content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,.06) 1px, transparent 0);
+    background-size:26px 26px;
+    background-repeat:repeat;
+    opacity:.6;
+  }
+  body:after{
+    content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 0%, rgba(30,60,110,.35) 0%, rgba(12,14,17,.85) 55%, #0c0e11 100%);
+  }
+  .app{position:relative; z-index:1}
+  a{color:var(--blue-lt)}
+
+  /* ---------- Шапка ---------- */
+  header{padding:22px 24px 0}
+  .hwrap{max-width:1240px;margin:0 auto}
+  .htop{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .logo{display:none}
+  h1{margin:0;font-size:25px;font-weight:600;letter-spacing:.2px;color:#fff}
+  .hsub{margin:3px 0 0;font-size:14.5px;color:#95a3b4}
+  .hbadge{
+    margin-left:auto;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+    border-radius:12px;padding:9px 16px;font-size:12.5px;text-align:right;color:#9fb0c2
+  }
+  .hbadge b{display:block;font-size:15.5px;font-weight:600;color:#fff}
+
+  nav.tabs{max-width:1240px;margin:18px auto 0;display:flex;gap:7px;flex-wrap:wrap}
+  .tab{
+    background:rgba(255,255,255,.06);color:#c9d6e2;border:1px solid rgba(255,255,255,.12);
+    padding:9px 18px;border-radius:11px;cursor:pointer;font-size:14.5px;font-weight:500;transition:.18s
+  }
+  .tab:hover{background:rgba(255,255,255,.13);color:#fff}
+  .tab.on{background:#fff;color:#0c0e11;border-color:#fff;font-weight:600}
+
+  .searchbar{max-width:1240px;margin:16px auto 0;position:relative}
+  .searchbar input{
+    width:100%;padding:15px 16px 15px 48px;border-radius:14px;
+    border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);
+    color:#fff;font-size:16px;outline:none;transition:.18s
+  }
+  .searchbar input::placeholder{color:#7d8ea1}
+  .searchbar input:focus{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3)}
+  .sicon{position:absolute;left:17px;top:13px;font-size:18px;opacity:.6;pointer-events:none}
+
+  main{max-width:1240px;margin:0 auto;padding:26px 24px 40px}
+
+  /* ---------- ПАПКИ (главный экран) ---------- */
+  .scene{perspective:1600px}
+  .folders{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));
+    gap:26px 24px;transform-style:preserve-3d
+  }
+  .folder{
+    position:relative;cursor:pointer;border:0;padding:0;text-align:left;font:inherit;color:inherit;
+    background:transparent;transform-style:preserve-3d;
+    animation:rise .55s cubic-bezier(.2,.8,.25,1) both;
+  }
+  @keyframes rise{
+    from{opacity:0;transform:translateY(26px) rotateX(10deg) scale(.97)}
+    to{opacity:1;transform:none}
+  }
+  /* листы позади папки */
+  .sheet{
+    position:absolute;left:12px;right:12px;top:-9px;height:60px;border-radius:18px 18px 8px 8px;
+    background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.05));
+    border:1px solid rgba(255,255,255,.13);
+    transition:transform .38s cubic-bezier(.2,.8,.25,1), opacity .3s;
+    backdrop-filter:blur(3px);
+  }
+  .sheet.s2{left:22px;right:22px;top:-18px;opacity:.65}
+  .folder:hover .sheet.s1{transform:translateY(-8px) rotate(-.5deg)}
+  .folder:hover .sheet.s2{transform:translateY(-15px) rotate(.7deg)}
+
+  .face{
+    position:relative;border-radius:20px;padding:22px 22px 18px;min-height:268px;
+    display:flex;flex-direction:column;
+    background:linear-gradient(155deg, rgba(255,255,255,.17) 0%, rgba(255,255,255,.07) 45%, rgba(255,255,255,.04) 100%);
+    border:1px solid rgba(255,255,255,.17);
+    backdrop-filter:blur(14px) saturate(1.2);
+    box-shadow:0 20px 45px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.22);
+    transition:transform .4s cubic-bezier(.2,.8,.25,1), box-shadow .4s, border-color .3s;
+    overflow:hidden;
+  }
+  /* цветное свечение раздела */
+  .face:before{
+    content:'';position:absolute;inset:-40% -10% auto -30%;height:150%;
+    background:radial-gradient(60% 55% at 30% 20%, var(--glow) 0%, transparent 70%);
+    opacity:.42;transition:opacity .4s;pointer-events:none;
+  }
+  .folder:hover .face{
+    transform:translateY(-10px) rotateX(3deg) scale(1.015);
+    box-shadow:0 30px 65px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.1), 0 14px 50px var(--glow);
+    border-color:rgba(255,255,255,.3);
+  }
+  .folder:hover .face:before{opacity:.75}
+
+  .fhead{display:flex;align-items:flex-start;gap:13px;position:relative;z-index:1}
+  .fico{
+    width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+    font-size:25px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);
+    flex-shrink:0;filter:saturate(.8)
+  }
+  .fnum{font-size:11.5px;letter-spacing:1.3px;color:#a9bacb;font-weight:700;text-transform:uppercase}
+  .farrow{
+    margin-left:auto;width:34px;height:34px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:16px;color:#0c0e11;
+    background:rgba(255,255,255,.85);opacity:0;transform:translateX(-6px);transition:.3s
+  }
+  .folder:hover .farrow{opacity:1;transform:none}
+
+  .ftitle{margin:15px 0 7px;font-size:21px;line-height:1.25;font-weight:600;color:#fff;position:relative;z-index:1}
+  .fsub{margin:0;font-size:14px;color:#a9b8c8;position:relative;z-index:1}
+
+  .flist{margin:16px 0 0;padding:0;list-style:none;position:relative;z-index:1;flex:1}
+  .flist li{
+    font-size:13.5px;color:#c6d3e0;padding:5px 0 5px 16px;position:relative;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    border-top:1px solid rgba(255,255,255,.07)
+  }
+  .flist li:first-child{border-top:0}
+  .flist li:before{
+    content:'';position:absolute;left:2px;top:14px;width:5px;height:5px;border-radius:50%;
+    background:var(--glow);opacity:.9
+  }
+  .flist li.more{color:#8c9cad;padding-left:16px}
+  .flist li.more:before{display:none}
+
+  .fmeta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;position:relative;z-index:1}
+  .tag{
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);
+    border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;color:#dbe6f0
+  }
+  .tag.new{background:rgba(124,58,237,.3);border-color:rgba(167,139,250,.45);color:#e9dcff}
+  .tag.alert{background:rgba(220,38,38,.28);border-color:rgba(248,113,113,.45);color:#ffdede}
+
+  .folder.zoom{z-index:5}
+  .folder.zoom .face{transform:scale(1.06) translateY(-8px);box-shadow:0 40px 90px rgba(0,0,0,.6), 0 0 90px var(--glow)}
+
+  /* ---------- Шаги (этапы) внутри раздела ---------- */
+  .steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;margin:4px 0 6px}
+  .step{
+    position:relative;cursor:pointer;border:0;text-align:left;font:inherit;color:inherit;
+    border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;min-height:158px;
+    background:linear-gradient(155deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.06) 50%, rgba(255,255,255,.03) 100%);
+    border:1px solid rgba(255,255,255,.15);
+    backdrop-filter:blur(12px) saturate(1.15);
+    box-shadow:0 16px 36px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.18);
+    transition:transform .32s cubic-bezier(.2,.8,.25,1), box-shadow .32s, border-color .25s;
+    overflow:hidden;
+    animation:rise .45s cubic-bezier(.2,.8,.25,1) both;
+  }
+  .step:before{
+    content:'';position:absolute;inset:-60% -20% auto -40%;height:170%;
+    background:radial-gradient(55% 50% at 28% 22%, var(--glow) 0%, transparent 70%);
+    opacity:.35;transition:opacity .3s;pointer-events:none
+  }
+  .step:hover{transform:translateY(-7px);border-color:rgba(255,255,255,.28);
+              box-shadow:0 26px 54px rgba(0,0,0,.5), 0 10px 40px var(--glow)}
+  .step:hover:before{opacity:.7}
+  .stepTop{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+  .stepNo{
+    width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    font-size:15px;font-weight:700;color:#fff;background:rgba(255,255,255,.16);
+    border:1px solid rgba(255,255,255,.2);flex-shrink:0
+  }
+  .stepIco{font-size:20px;filter:saturate(.8)}
+  .stepCnt{margin-left:auto;font-size:12.5px;font-weight:700;color:#cfdcea;
+           background:rgba(255,255,255,.12);border-radius:20px;padding:4px 12px}
+  .step h4{margin:14px 0 6px;font-size:18px;font-weight:600;color:#fff;position:relative;z-index:1}
+  .step p{margin:0;font-size:13.5px;color:#a9b8c8;position:relative;z-index:1;flex:1}
+  .stepCodes{margin-top:12px;font-size:12.5px;color:#93a5b7;position:relative;z-index:1;
+             white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .allDocs{
+    background:rgba(255,255,255,.07);border:1px dashed rgba(255,255,255,.2);color:#cdd9e5;
+    border-radius:14px;padding:13px 18px;font-size:14.5px;cursor:pointer;width:100%;
+    margin-top:4px;transition:.2s
+  }
+  .allDocs:hover{background:rgba(255,255,255,.13);color:#fff}
+  .stageHead{
+    display:flex;align-items:center;gap:14px;margin:2px 0 16px;color:#e8edf3
+  }
+  .stageHead .stepNo{width:40px;height:40px;font-size:17px}
+  .stageHead h3{margin:0;font-size:22px;font-weight:600;color:#fff}
+  .stageHead .sh{font-size:13.5px;color:#9fb0c2;margin-top:2px}
+
+  /* ---------- Рабочая панель (внутри раздела) ---------- */
+  .panel{animation:panelIn .42s cubic-bezier(.2,.8,.25,1) both}
+  @keyframes panelIn{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:none}}
+
+  .back{
+    display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.14);color:#cdd9e5;border-radius:11px;
+    padding:9px 16px;font-size:14.5px;cursor:pointer;margin-bottom:18px;transition:.2s
+  }
+  .back:hover{background:rgba(255,255,255,.14);color:#fff}
+
+  .sheetHead{
+    background:var(--paper);border-radius:18px;box-shadow:var(--shadow);padding:24px 26px;margin-bottom:16px;
+    border-left:6px solid var(--blue);color:var(--ink)
+  }
+  .sheetHead h2{margin:0;font-size:24px;display:flex;align-items:center;gap:14px;color:var(--ink)}
+  .sheetHead .sub{font-size:15px;color:var(--muted);margin-top:6px}
+  .sheetHead .intro{margin:12px 0 0;font-size:15.5px;color:#3d4d5c;max-width:82ch}
+  .ico2{
+    width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-size:23px;flex-shrink:0;filter:saturate(.75)
+  }
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:15px}
+  .chip{background:#f1f5f9;border:1px solid var(--line);border-radius:18px;padding:4px 12px;font-size:12.5px;color:#475569}
+
+  .doc{background:var(--paper);border-radius:14px;box-shadow:var(--shadow);margin-bottom:11px;overflow:hidden;
+       border-left:4px solid transparent;color:var(--ink)}
+  .doc.main{border-left-color:var(--pink)}
+  .doc.dead{border-left-color:#dc2626}
+  .deadnote{font-size:13px;color:#b91c1c;font-weight:600;margin-top:5px}
+  .replaced{background:#fef2f2;border-left:3px solid #dc2626;padding:12px 15px;
+            border-radius:0 9px 9px 0;font-size:15.5px;color:#7f1d1d}
+  .whybase{background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:10px;
+           padding:11px 14px;font-size:14.5px;color:#475569;margin-top:13px}
+  .dhead{padding:16px 20px;cursor:pointer;display:flex;gap:14px;align-items:flex-start}
+  .dhead:hover{background:#f8fafc}
+  .dcode{font-weight:700;font-size:16.5px;color:var(--blue);white-space:nowrap}
+  .dname{font-size:15.5px;color:#28353f;margin-top:3px}
+  .dmeta{font-size:13.5px;color:var(--muted);margin-top:5px}
+  .dright{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+  .arrow{color:#94a3b8;font-size:13px;transition:transform .2s}
+  .doc.open .arrow{transform:rotate(90deg)}
+
+  .st{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+  .st-active{background:#dcfce7;color:#15803d}
+  .st-changed{background:#fef3c7;color:#92400e}
+  .st-fresh{background:#ede9fe;color:#5b21b6}
+  .st-replaced{background:#ffedd5;color:#9a3412}
+  .st-cancelled{background:#fee2e2;color:#991b1b}
+  .role{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+
+  .dbody{display:none;padding:2px 20px 20px;border-top:1px solid var(--line)}
+  .doc.open .dbody{display:block}
+  .block{margin-top:15px}
+  .block h4{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:700}
+  .where{background:#f0f7ff;border-left:3px solid var(--blue);padding:12px 15px;border-radius:0 9px 9px 0;font-size:15.5px}
+  .block ul{margin:0;padding-left:21px;font-size:15.5px}
+  .block ul li{margin-bottom:6px}
+  .checks{background:#fff8ec;border-left:3px solid var(--warn);padding:12px 14px 12px 16px;border-radius:0 9px 9px 0}
+  .checks ul{padding-left:19px;margin:0}
+  li.ex{list-style:none;margin-left:-19px;color:#54636f;font-size:14.5px;background:#f3f6f9;
+        border-left:3px solid #c3ced9;padding:9px 13px;border-radius:0 9px 9px 0;margin-top:9px}
+  li.ex b{color:#44546a;font-weight:700}
+  .dfoot{margin-top:15px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+  .ver{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .dot.web{background:var(--ok)} .dot.base{background:#cbd5e1}
+  .findlink{
+    display:inline-flex;align-items:center;gap:6px;background:#eef4fb;border:1px solid #cfe0f1;
+    color:var(--blue);border-radius:9px;padding:6px 13px;font-size:13.5px;
+    font-weight:600;text-decoration:none;transition:.18s
+  }
+  .findlink:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+  /* ---------- Числа / таймлайн / памятка ---------- */
+  .ngroup{margin-bottom:26px}
+  .ngroup h3{font-size:16.5px;margin:0 0 12px;padding-left:12px;border-left:4px solid var(--blue);color:#e8edf3}
+  .ncards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px}
+  .ncard{background:var(--paper);border-radius:14px;box-shadow:var(--shadow);padding:16px 17px;color:var(--ink)}
+  .ncard .v{font-size:25px;font-weight:700;line-height:1.15}
+  .ncard .t{font-size:14.5px;margin-top:6px;color:#28353f}
+  .ncard .s{font-size:12.5px;color:var(--muted);margin-top:9px}
+  .kind{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;white-space:nowrap;margin-left:4px;display:inline-block}
+  .kind.kn{background:#e0f2fe;color:#075985}
+  .kind.kp{background:#fef3c7;color:#92400e}
+  .ncard .n{font-size:13.5px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);color:#92400e}
+
+  .tl{position:relative;padding-left:28px}
+  .tl:before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:rgba(255,255,255,.14)}
+  .tli{position:relative;margin-bottom:15px;background:var(--paper);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;color:var(--ink)}
+  .tli:before{content:'';position:absolute;left:-24px;top:22px;width:12px;height:12px;border-radius:50%;
+              background:#64748b;border:2px solid var(--dark);box-shadow:0 0 0 2px rgba(255,255,255,.18)}
+  .tli.high:before{background:var(--pink)}
+  .tli .d{font-size:13px;font-weight:700;color:var(--pink);letter-spacing:.4px}
+  .tli h4{margin:4px 0 6px;font-size:17px}
+  .tli p{margin:0;font-size:15.5px;color:#3d4d5c}
+
+  .crumbs{font-size:13.5px;color:#8fa0b3;margin-bottom:14px}
+  .empty{background:var(--paper);border-radius:14px;padding:32px;text-align:center;color:var(--muted);box-shadow:var(--shadow)}
+  .resec{font-size:12.5px;color:#8fa0b3;margin-bottom:3px}
+  mark{background:#fde68a;color:#7c2d12;border-radius:3px;padding:0 2px}
+
+  footer{max-width:1240px;margin:8px auto 40px;padding:0 24px;font-size:13px;color:#8395a8}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:9px;align-items:center}
+  footer a{color:#9ec5ff}
+
+  @media (max-width:640px){
+    h1{font-size:20px} main{padding:18px 16px 32px} header{padding:16px 16px 0}
+    .folders{grid-template-columns:1fr;gap:22px}
+    .face{min-height:auto}
+    .hbadge{margin-left:0;text-align:left}
+    .dhead{flex-direction:column;gap:7px} .dright{margin-left:0;align-items:flex-start;flex-direction:row}
+  }
+  @media print{
+    body{background:#fff;color:#000} body:before,body:after{display:none}
+    nav.tabs,.searchbar,.back,.crumbs{display:none}
+    .doc .dbody{display:block !important}
+    .doc,.ncard,.tli,.sheetHead{break-inside:avoid;box-shadow:none;border:1px solid #ddd}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div class="hwrap">
+    <div class="htop">
+      <div>
+        <h1 id="hTitle">Нормативная база строительства</h1>
+        <p class="hsub" id="hSub"></p>
+      </div>
+      <div class="hbadge">
+        <b id="hChecked"></b>
+        последняя сверка редакций
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab on" data-tab="sections">Разделы</button>
+      <button class="tab" data-tab="numbers">Ключевые числа</button>
+      <button class="tab" data-tab="timeline">Что изменилось</button>
+      <button class="tab" data-tab="about">Как пользоваться</button>
+    </nav>
+    <div class="searchbar">
+      <span class="sicon">🔍</span>
+      <input id="q" type="search" placeholder="Поиск по шифру, названию, требованию: «±15 мм», «огнезащита», «СП 70», «мембрана»…" autocomplete="off">
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="crumbs" id="crumbs"></div>
+  <div id="view"></div>
+</main>
+
+<footer>
+  <div><b>Метки.</b></div>
+  <div class="legend">
+    <span><span class="st st-active">Действует</span></span>
+    <span><span class="st st-changed">Действует с изм.</span></span>
+    <span><span class="st st-fresh">Новое / обновлено</span></span>
+    <span><span class="st st-cancelled">Не применяется</span> отменён — в карточке указано, чем заменён</span>
+    <span><span class="dot web"></span> редакция сверена с источником</span>
+    <span><span class="dot base"></span> справочные данные</span>
+  </div>
+  <p style="margin-top:14px">Рабочий инструмент, а не официальный источник. Кнопка «Найти текст документа» открывает поиск по шифру в электронном фонде — там же видно, с какими изменениями документ действует сейчас. Другие источники:
+    <a href="https://docs.cntd.ru" target="_blank" rel="noopener">docs.cntd.ru</a> ·
+    <a href="https://protect.gost.ru" target="_blank" rel="noopener">protect.gost.ru</a> ·
+    <a href="https://minstroyrf.gov.ru/docs/" target="_blank" rel="noopener">minstroyrf.gov.ru</a>
+  </p>
+</footer>
+
+</div>
+
+<script src="data/00-meta.js"></script>
+<script src="data/01-organizaciya.js"></script>
+<script src="data/02-geodeziya.js"></script>
+<script src="data/03-zemlya.js"></script>
+<script src="data/04-svai.js"></script>
+<script src="data/05-beton.js"></script>
+<script src="data/06-sbornyj-zhb.js"></script>
+<script src="data/07-mk.js"></script>
+<script src="data/08-ograzhdenie.js"></script>
+<script src="data/09-krovlya.js"></script>
+<script src="data/10-pozharnaya.js"></script>
+<script src="data/11-naruzhnye-seti.js"></script>
+<script src="data/12-vnutrennie-seti.js"></script>
+<script src="data/13-blagoustrojstvo.js"></script>
+<script src="data/14-ot-eko.js"></script>
+<script src="data/15-tehnologiya.js"></script>
+<script src="data/90-chisla.js"></script>
+<script>
+(function(){
+  var NB = window.NB || {sections:[]};
+  var S = NB.statuses || {};
+  var view = document.getElementById('view');
+  var crumbs = document.getElementById('crumbs');
+  var qInput = document.getElementById('q');
+  var state = {tab:'sections', section:null, stage:null, query:''};
+
+  document.getElementById('hTitle').textContent = NB.meta.title;
+  document.getElementById('hSub').textContent = NB.meta.subtitle;
+  document.getElementById('hChecked').textContent = NB.meta.checked;
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function hi(text, q){
+    if(!q) return esc(text);
+    var t = esc(text);
+    try{
+      var re = new RegExp('('+esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');
+      return t.replace(re,'<mark>$1</mark>');
+    }catch(e){ return t; }
+  }
+
+  function tint(hex, a){
+    var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '#004e96');
+    if(!m) return 'rgba(0,78,150,'+a+')';
+    return 'rgba('+parseInt(m[1],16)+','+parseInt(m[2],16)+','+parseInt(m[3],16)+','+a+')';
+  }
+
+  function li(text){
+    var t = String(text || '');
+    if(t.indexOf('Пример:') === 0){
+      return '<li class="ex"><b>Пример из практики.</b> ' + hi(t.slice(7).replace(/^\s+/, ''), state.query) + '</li>';
+    }
+    return '<li>' + hi(t, state.query) + '</li>';
+  }
+
+  // шифр документа -> запрос для поиска (убираем пояснения в скобках и вторые номера)
+  function cleanCode(code){
+    return String(code || '')
+      .replace(/\(.*?\)/g, ' ')
+      .split('/')[0]
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  function cntdSearch(code){
+    return 'https://docs.cntd.ru/search?q=' + encodeURIComponent(cleanCode(code));
+  }
+  // прямые ссылки на docs.cntd.ru не используем: их id меняются, а поиск работает всегда
+  function sourceLink(d){
+    var l = d.link || '';
+    if(!l || l.indexOf('docs.cntd.ru') > -1) return '';
+    return '<a href="' + esc(l) + '" target="_blank" rel="noopener">Первоисточник ↗</a>';
+  }
+
+  function stBadge(st){
+    var d = S[st] || S.active;
+    return '<span class="st '+d.cls+'">'+d.label+'</span>';
+  }
+
+  // этапы жизненного цикла работ — второй уровень внутри раздела
+  var STAGES = [
+    {id:'legal',    ico:'\u2696\uFE0F', t:'Правовая база',              s:'Законы и постановления — рамка, в которой работают все остальные нормы'},
+    {id:'design',   ico:'\uD83D\uDCD0', t:'Проектирование и расчёт',    s:'Что должно быть заложено в проект и по каким нормам он проверяется'},
+    {id:'material', ico:'\uD83D\uDCE6', t:'Материалы и изделия',        s:'Входной контроль: что принимаем на площадку и по каким документам'},
+    {id:'work',     ico:'\uD83D\uDD28', t:'Производство работ',         s:'Как работа должна выполняться: технология, последовательность, допуски'},
+    {id:'control',  ico:'\uD83D\uDD0D', t:'Контроль и приёмка',         s:'Чем доказывается качество: измерения, испытания, документация'},
+    {id:'safety',   ico:'\uD83E\uDDBA', t:'Охрана труда и безопасность',s:'Требования к безопасному производству работ'},
+    {id:'eco',      ico:'\uD83C\uDF3F', t:'Экология и отходы',          s:'Обращение с отходами и охрана окружающей среды'}
+  ];
+  function stageOf(id){ return STAGES.filter(function(x){return x.id===id;})[0] || STAGES[3]; }
+
+  function counts(sec){
+    var alert=0, fresh=0;
+    sec.docs.forEach(function(d){
+      if(d.status==='cancelled'||d.status==='replaced') alert++;
+      if(d.status==='fresh') fresh++;
+    });
+    return {alert:alert, fresh:fresh};
+  }
+
+  // ---------- Главный экран: папки ----------
+  function renderSections(){
+    crumbs.innerHTML = '';
+    var h = '<div class="scene"><div class="folders">';
+    NB.sections.forEach(function(sec, i){
+      var c = counts(sec);
+      var preview = sec.docs.slice(0,4).map(function(d){
+        return '<li>'+esc(d.code)+'</li>';
+      }).join('');
+      if(sec.docs.length > 4){
+        preview += '<li class="more">и ещё '+(sec.docs.length-4)+'…</li>';
+      }
+      h += '<button class="folder" data-sec="'+sec.id+'" style="--glow:'+tint(sec.color,.55)+';animation-delay:'+(i*45)+'ms">'+
+        '<span class="sheet s2"></span><span class="sheet s1"></span>'+
+        '<span class="face">'+
+          '<span class="fhead">'+
+            '<span class="fico" style="background:'+tint(sec.color,.3)+'">'+sec.icon+'</span>'+
+            '<span><span class="fnum">Раздел '+sec.num+'</span></span>'+
+            '<span class="farrow">→</span>'+
+          '</span>'+
+          '<span class="ftitle">'+esc(sec.title)+'</span>'+
+          '<span class="fsub">'+esc(sec.subtitle)+'</span>'+
+          '<ul class="flist">'+preview+'</ul>'+
+          '<span class="fmeta">'+
+            '<span class="tag">'+sec.docs.length+' док.</span>'+
+            (c.fresh?'<span class="tag new">'+c.fresh+' обновлено</span>':'')+
+            (c.alert?'<span class="tag alert">'+c.alert+' устарело</span>':'')+
+          '</span>'+
+        '</span>'+
+      '</button>';
+    });
+    h += '</div></div>';
+    view.innerHTML = h;
+    attachTilt();
+  }
+
+  // лёгкий наклон папки к курсору
+  function attachTilt(){
+    var cards = view.querySelectorAll('.folder');
+    Array.prototype.forEach.call(cards, function(card){
+      var face = card.querySelector('.face');
+      card.addEventListener('mousemove', function(e){
+        var r = card.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width - .5;
+        var py = (e.clientY - r.top) / r.height - .5;
+        face.style.transform = 'translateY(-10px) scale(1.015) rotateX('+(-py*5+3)+'deg) rotateY('+(px*6)+'deg)';
+      });
+      card.addEventListener('mouseleave', function(){ face.style.transform = ''; });
+    });
+  }
+
+  // ---------- Экран раздела: шаги ----------
+  function sectionHead(sec, compact){
+    return '<div class="sheetHead" style="border-left-color:'+sec.color+'">'+
+      '<h2><span class="ico2" style="background:'+tint(sec.color,.16)+'">'+sec.icon+'</span>'+esc(sec.title)+'</h2>'+
+      '<div class="sub">Раздел '+sec.num+' · '+esc(sec.subtitle)+'</div>'+
+      (compact ? '' :
+        '<p class="intro">'+esc(sec.intro)+'</p>'+
+        '<div class="chips">'+(sec.contractors||[]).map(function(c){return '<span class="chip">'+esc(c)+'</span>';}).join('')+'</div>')+
+      '</div>';
+  }
+
+  function renderSection(id){
+    var sec = NB.sections.filter(function(s){return s.id===id;})[0];
+    if(!sec){ renderSections(); return; }
+    crumbs.innerHTML = '';
+
+    var h = '<div class="panel">'+
+      '<button class="back" data-home="1">← Все разделы</button>'+
+      sectionHead(sec, false)+
+      '<div class="steps" style="--glow:'+tint(sec.color,.5)+'">';
+
+    var n = 0;
+    STAGES.forEach(function(st){
+      var docs = sec.docs.filter(function(d){ return (d.stage||'work')===st.id; });
+      if(!docs.length) return;
+      n++;
+      var codes = docs.slice(0,3).map(function(d){return d.code;}).join(' · ');
+      if(docs.length>3) codes += ' · …';
+      h += '<button class="step" data-stage="'+st.id+'" data-sec="'+sec.id+'" style="animation-delay:'+(n*50)+'ms">'+
+        '<span class="stepTop">'+
+          '<span class="stepNo">'+n+'</span>'+
+          '<span class="stepIco">'+st.ico+'</span>'+
+          '<span class="stepCnt">'+docs.length+'</span>'+
+        '</span>'+
+        '<h4>'+esc(st.t)+'</h4>'+
+        '<p>'+esc(st.s)+'</p>'+
+        '<span class="stepCodes">'+esc(codes)+'</span>'+
+      '</button>';
+    });
+    h += '</div>'+
+      '<button class="allDocs" data-all="'+sec.id+'">Показать все документы раздела ('+sec.docs.length+')</button>'+
+      '</div>';
+    view.innerHTML = h;
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  // ---------- Экран этапа: документы ----------
+  function renderStage(secId, stageId){
+    var sec = NB.sections.filter(function(s){return s.id===secId;})[0];
+    if(!sec){ renderSections(); return; }
+    crumbs.innerHTML = '';
+
+    var docs, title, sub, ico, no = '•';
+    if(stageId === '*'){
+      docs = sec.docs; title = 'Все документы раздела'; sub = 'Полный перечень, ' + docs.length + ' шт.'; ico = '📚';
+    } else {
+      var st = stageOf(stageId);
+      docs = sec.docs.filter(function(d){ return (d.stage||'work')===stageId; });
+      title = st.t; sub = st.s; ico = st.ico;
+      var shown = STAGES.filter(function(x){ return sec.docs.some(function(d){return (d.stage||'work')===x.id;}); });
+      no = (shown.map(function(x){return x.id;}).indexOf(stageId) + 1) || '•';
+    }
+
+    var h = '<div class="panel">'+
+      '<button class="back" data-sec-back="'+sec.id+'">← '+esc(sec.title)+'</button>'+
+      sectionHead(sec, true)+
+      '<div class="stageHead">'+
+        '<span class="stepNo">'+no+'</span>'+
+        '<div><h3>'+esc(ico)+' '+esc(title)+'</h3><div class="sh">'+esc(sub)+'</div></div>'+
+      '</div>';
+    docs.forEach(function(d,i){ h += docHtml(d, sec, i); });
+    h += '</div>';
+    view.innerHTML = h;
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function renderSectionOld(id){
+    var sec = NB.sections.filter(function(s){return s.id===id;})[0];
+    if(!sec){ renderSections(); return; }
+    crumbs.innerHTML = '';
+    var h = '<div class="panel">'+
+      '<button class="back" data-home="1">← Все разделы</button>'+
+      '<div class="sheetHead" style="border-left-color:'+sec.color+'">'+
+        '<h2><span class="ico2" style="background:'+tint(sec.color,.16)+'">'+sec.icon+'</span>'+esc(sec.title)+'</h2>'+
+        '<div class="sub">Раздел '+sec.num+' · '+esc(sec.subtitle)+'</div>'+
+        '<p class="intro">'+esc(sec.intro)+'</p>'+
+        '<div class="chips">'+(sec.contractors||[]).map(function(c){return '<span class="chip">'+esc(c)+'</span>';}).join('')+'</div>'+
+      '</div>';
+    sec.docs.forEach(function(d,i){ h += docHtml(d, sec, i); });
+    h += '</div>';
+    view.innerHTML = h;
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function docHtml(d, sec, idx){
+    var isMain = d.role==='главный' || d.role==='база';
+    var isDead = d.status==='cancelled' || d.status==='replaced';
+    var h = '<div class="doc'+(isMain&&!isDead?' main':'')+(isDead?' dead':'')+'">'+
+      '<div class="dhead">'+
+        '<div><div class="dcode">'+hi(d.code, state.query)+'</div>'+
+        '<div class="dname">'+hi(d.name, state.query)+'</div>'+
+        (d.edition||d.effective ? '<div class="dmeta">'+esc(d.edition||'')+(d.edition&&d.effective?' · ':'')+esc(d.effective||'')+'</div>' : '')+
+        (isDead ? '<div class="deadnote">В новых документах на него не ссылаться — проверьте, чем заменён</div>' : '')+
+        '</div>'+
+        '<div class="dright">'+stBadge(d.status)+
+          (d.role?'<span class="role">'+esc(d.role)+'</span>':'')+
+          '<span class="arrow">▶</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="dbody">';
+
+    if(isDead){
+      h += '<div class="block"><h4>Чем заменён</h4><div class="replaced">'+
+        esc(d.replacedBy || 'Документ не применяется. Уточните действующую замену перед ссылкой на него.')+
+        '</div>'+
+        '<div class="whybase">Такие документы оставлены в базе намеренно: они массово встречаются в договорах, ППР и техкартах, выпущенных раньше. Увидели ссылку на него в чужом документе — это готовое основание вернуть документ на доработку.</div>'+
+        '</div>';
+    }
+    if(d.full) h += '<div class="block"><h4>Реквизиты</h4><div style="font-size:14px;color:#3d4d5c">'+esc(d.full)+'</div></div>';
+    if(d.where) h += '<div class="block"><h4>Где применяется</h4><div class="where">'+hi(d.where, state.query)+'</div></div>';
+    if(d.key && d.key.length){
+      h += '<div class="block"><h4>Ключевые положения</h4><ul>';
+      d.key.forEach(function(k){ h += li(k); });
+      h += '</ul></div>';
+    }
+    if(d.check && d.check.length){
+      h += '<div class="block"><h4>Что проверять на площадке</h4><div class="checks"><ul>';
+      d.check.forEach(function(k){ h += li(k); });
+      h += '</ul></div></div>';
+    }
+    h += '<div class="dfoot">'+
+      '<span class="ver"><span class="dot '+(d.verified==='web'?'web':'base')+'"></span>'+
+      (d.verified==='web'?'редакция сверена с источником':'по справочным данным')+'</span>'+
+      '<a class="findlink" href="'+cntdSearch(d.code)+'" target="_blank" rel="noopener">Найти текст документа ↗</a>'+
+      sourceLink(d)+
+      '</div></div></div>';
+    return h;
+  }
+
+  // ---------- Поиск ----------
+  function renderSearch(q){
+    crumbs.innerHTML = 'Поиск: «'+esc(q)+'»';
+    var ql = q.toLowerCase(), res = [];
+    NB.sections.forEach(function(sec){
+      sec.docs.forEach(function(d){
+        var hay = [d.code,d.name,d.full,d.where,d.edition,d.effective,(d.key||[]).join(' '),(d.check||[]).join(' ')].join(' ').toLowerCase();
+        if(hay.indexOf(ql)>-1) res.push({d:d, sec:sec});
+      });
+    });
+    if(!res.length){
+      view.innerHTML = '<div class="empty">Ничего не нашлось по запросу «'+esc(q)+'».<br><br>'+
+        'Попробуйте короче: «СП 70», «огнезащита», «мембрана», «допуск», «уплотнение».</div>';
+      return;
+    }
+    var h = '<div style="margin-bottom:14px;color:#9fb0c2;font-size:14.5px">Найдено документов: <b style="color:#fff">'+res.length+'</b></div>';
+    res.forEach(function(r,i){
+      h += '<div class="resec">'+r.sec.icon+' Раздел '+r.sec.num+' · '+esc(r.sec.title)+'</div>';
+      h += docHtml(r.d, null, i);
+    });
+    view.innerHTML = h;
+  }
+
+  // ---------- Числа ----------
+  function renderNumbers(){
+    crumbs.innerHTML = '';
+    var h = '<div class="sheetHead"><h2><span class="ico2" style="background:rgba(0,78,150,.16)">🔢</span>Ключевые числа</h2>'+
+      '<p class="intro">Значения, которые чаще всего нужны в споре на площадке. У каждого указан источник и пометка: взято из нормы или это типовое проектное значение, которое нужно проверять по своему проекту.</p></div>';
+    (NB.numbers||[]).forEach(function(g){
+      h += '<div class="ngroup"><h3 style="border-left-color:'+g.color+'">'+esc(g.group)+'</h3><div class="ncards">';
+      g.items.forEach(function(it){
+        var kind = it.kind==='project'
+          ? '<span class="kind kp">проектное значение</span>'
+          : '<span class="kind kn">по норме</span>';
+        h += '<div class="ncard"><div class="v" style="color:'+g.color+'">'+esc(it.v)+'</div>'+
+          '<div class="t">'+esc(it.t)+'</div>'+
+          '<div class="s">'+esc(it.src)+' '+kind+'</div>'+
+          (it.note?'<div class="n">'+esc(it.note)+'</div>':'')+
+          '</div>';
+      });
+      h += '</div></div>';
+    });
+    view.innerHTML = h;
+  }
+
+  // ---------- Таймлайн ----------
+  function renderTimeline(){
+    crumbs.innerHTML = '';
+    var h = '<div class="sheetHead" style="border-left-color:var(--pink)"><h2><span class="ico2" style="background:rgba(236,0,140,.14)">🕒</span>Что изменилось в нормах</h2>'+
+      '<p class="intro">Только то, что реально касается производства работ и документации. Если в договоре, ППР или ТЗ стоит устаревшая ссылка — её нужно актуализировать.</p></div>';
+    h += '<div class="tl">';
+    (NB.timeline||[]).forEach(function(t){
+      h += '<div class="tli '+(t.level==='high'?'high':'')+'">'+
+        '<div class="d">'+esc(t.date)+'</div><h4>'+esc(t.title)+'</h4><p>'+esc(t.text)+'</p></div>';
+    });
+    h += '</div>';
+    view.innerHTML = h;
+  }
+
+  // ---------- Памятка ----------
+  function renderAbout(){
+    crumbs.innerHTML = '';
+    var total = 0, web = 0;
+    NB.sections.forEach(function(s){ total += s.docs.length; web += s.docs.filter(function(d){return d.verified==='web';}).length; });
+    view.innerHTML = '<div class="sheetHead"><h2><span class="ico2" style="background:rgba(0,78,150,.16)">ℹ️</span>Как пользоваться</h2>'+
+      '<p class="intro">'+esc(NB.meta.note)+'</p></div>'+
+      '<div class="ncards">'+
+        '<div class="ncard"><div class="v" style="color:#004e96">'+NB.sections.length+'</div><div class="t">разделов по видам работ</div></div>'+
+        '<div class="ncard"><div class="v" style="color:#004e96">'+total+'</div><div class="t">документов в базе</div></div>'+
+        '<div class="ncard"><div class="v" style="color:#16a34a">'+web+'</div><div class="t">редакций сверено с источником</div></div>'+
+        '<div class="ncard"><div class="v" style="color:#ec008c">'+(NB.timeline||[]).length+'</div><div class="t">изменений отслежено</div></div>'+
+      '</div>'+
+      '<div class="sheetHead" style="margin-top:18px"><h2 style="font-size:19px">Порядок работы</h2>'+
+      '<ul style="font-size:15.5px;color:#3d4d5c;max-width:82ch">'+
+      '<li><b>Ищите сразу поиском.</b> Он идёт по шифрам, названиям, требованиям и числам: «±15 мм», «уплотнение», «R 90».</li>'+
+      '<li><b>Перед ссылкой в претензии</b> открывайте текст документа по ссылке в карточке и указывайте конкретный пункт или таблицу, а не свод правил целиком.</li>'+
+      '<li><b>Красная метка «Не применяется»</b> — документ отменён, но оставлен в базе специально. Такие ссылки до сих пор стоят в старых договорах, ППР и техкартах; внутри карточки написано, чем документ заменён. Нашли такую ссылку в чужом документе — это готовое основание вернуть его на доработку, а в своих новых документах на отменённое не ссылаться.</li>'+
+      '<li><b>Зелёная точка</b> значит, что редакция сверялась с источником при составлении базы. Серая — данные справочные, при споре проверьте отдельно.</li>'+
+      '<li><b>СТО НОСТРОЙ и МДС — добровольные.</b> В предписании ссылайтесь на СП или ГОСТ, а их приводите как раскрытие технологии и комплектности.</li>'+
+      '<li><b>Примеры из практики</b> в карточках — иллюстрация, а не требование. Требование — только текст нормы.</li>'+
+      '</ul></div>';
+  }
+
+  // ---------- Роутер ----------
+  function render(){
+    if(state.query){ renderSearch(state.query); return; }
+    if(state.tab==='sections'){
+      if(state.section && state.stage) renderStage(state.section, state.stage);
+      else if(state.section) renderSection(state.section);
+      else renderSections();
+    }
+    else if(state.tab==='numbers') renderNumbers();
+    else if(state.tab==='timeline') renderTimeline();
+    else renderAbout();
+  }
+
+  document.querySelectorAll('.tab').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+      state.tab = b.dataset.tab; state.section=null; state.stage=null; state.query=''; qInput.value='';
+      window.scrollTo({top:0,behavior:'smooth'}); render();
+    });
+  });
+
+  var t=null;
+  qInput.addEventListener('input', function(){
+    clearTimeout(t);
+    t = setTimeout(function(){
+      state.query = qInput.value.trim();
+      if(state.query){ state.section=null; state.stage=null; }
+      render();
+    }, 160);
+  });
+
+  view.addEventListener('click', function(e){
+    if(e.target.closest('[data-home]')){
+      state.section=null; state.stage=null; state.query=''; qInput.value='';
+      state.tab='sections';
+      document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on', x.dataset.tab==='sections');});
+      render();
+      return;
+    }
+    var folder = e.target.closest('.folder');
+    if(folder){
+      folder.classList.add('zoom');
+      var id = folder.dataset.sec;
+      setTimeout(function(){ state.section = id; state.stage = null; render(); }, 230);
+      return;
+    }
+    var step = e.target.closest('.step');
+    if(step){
+      state.section = step.dataset.sec;
+      state.stage = step.dataset.stage;
+      render();
+      return;
+    }
+    var all = e.target.closest('[data-all]');
+    if(all){
+      state.section = all.dataset.all; state.stage = '*'; render(); return;
+    }
+    var secBack = e.target.closest('[data-sec-back]');
+    if(secBack){
+      state.section = secBack.dataset.secBack; state.stage = null; render(); return;
+    }
+    var head = e.target.closest('.dhead');
+    if(head){ head.parentElement.classList.toggle('open'); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
